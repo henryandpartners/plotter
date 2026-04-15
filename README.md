@@ -2,11 +2,11 @@
 
 This repository contains a browser-based p5.js sketch that:
 
-- Generates an irregular tessellated pattern.
-- Adds hatch lines clipped to each tile.
+- Generates irregular tile-based compositions.
+- Supports multiple shape families (`polygon`, `star`, `petal/flower`, and `auto blend`).
+- Supports multiple patterning functions (`single hatch`, `cross hatch`, `concentric rings`).
 - Exports all strokes into a single SVG file suitable for Cricut workflows.
-- Exposes key variables as UI sliders for rapid design iteration.
-- Lets you upload a reference image to drive shape complexity and form deformation.
+- Lets you upload a reference image to drive local shape complexity and pattern expression.
 
 ## Run locally
 
@@ -22,29 +22,24 @@ Then visit <http://localhost:8000>.
 
 A GitHub Actions workflow is included at `.github/workflows/deploy-pages.yml`.
 
-### One-time setup
-
 1. Push this repo to GitHub.
 2. In **Settings → Pages**, set **Source** to **GitHub Actions**.
-3. Ensure your default deployment branch is `main` (or update the workflow trigger accordingly).
-
-### Deploy flow
-
-- Every push to `main` deploys automatically.
-- You can also trigger deploy manually from **Actions → Deploy static site to GitHub Pages → Run workflow**.
+3. Push to `main` (or run the workflow manually) to publish.
 
 ## Adjustable design variables
 
 - `Reference Image` — optional image map to drive local form changes.
+- `Shape Mode` — choose `auto`, `polygon`, `star`, or `petal` forms.
+- `Pattern Mode` — choose `single hatch`, `cross hatch`, or `concentric rings`.
 - `Seed` — deterministic variation of geometry.
 - `Tile Size` — macro density of tessellation.
-- `Base Sides` — baseline polygon sides for each cell.
+- `Base Sides` — baseline complexity for shape generation.
 - `Distortion` — vertex deformation strength.
-- `Image Influence` — blend amount between base shape and image-driven shape complexity.
-- `Hatch Spacing` — line spacing for cut/draw density.
-- `Hatch Angle` — angle of hatch orientation.
+- `Image Influence` — blend amount between baseline and image-driven modulation.
+- `Motif Density` — number of concentric layers / motif repetitions.
+- `Hatch Spacing` and `Hatch Angle` — line-based pattern tuning.
 
 ## Output details
 
-The export writes one `<path>` per line segment (tile boundaries + hatch segments) into one SVG.
-This is intentionally stroke-only so Cricut Design Space can interpret it cleanly as draw/cut linework.
+The export writes one `<path>` per line segment (shape boundaries + motif lines) into one SVG.
+This is intentionally stroke-only so Cricut Design Space can interpret it as draw/cut linework.

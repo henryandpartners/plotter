@@ -15,7 +15,7 @@
         background: #101018;
         color: #f2f2f5;
         display: grid;
-        grid-template-columns: 310px 1fr;
+        grid-template-columns: 320px 1fr;
         min-height: 100vh;
       }
       #controls {
@@ -34,7 +34,8 @@
         font-size: 0.9rem;
       }
       input[type='range'],
-      input[type='file'] {
+      input[type='file'],
+      select {
         width: 100%;
       }
       button {
@@ -63,9 +64,6 @@
         font-size: 0.75rem;
         color: #a7a7bc;
       }
-      a {
-        color: #8fb3ff;
-      }
     </style>
   </head>
   <body>
@@ -75,7 +73,26 @@
       <div class="control">
         <label for="sourceImage">Reference Image (optional)</label>
         <input id="sourceImage" type="file" accept="image/*" />
-        <span class="hint">Image brightness can drive tile shape and deformation.</span>
+        <span class="hint">Image brightness can drive local shape complexity and patterns.</span>
+      </div>
+
+      <div class="control">
+        <label for="shapeMode">Shape Mode</label>
+        <select id="shapeMode">
+          <option value="auto">Auto Blend</option>
+          <option value="polygon">Polygon</option>
+          <option value="star">Star</option>
+          <option value="petal">Petal / Flower</option>
+        </select>
+      </div>
+
+      <div class="control">
+        <label for="patternMode">Pattern Mode</label>
+        <select id="patternMode">
+          <option value="hatch">Single Hatch</option>
+          <option value="cross">Cross Hatch</option>
+          <option value="concentric">Concentric Rings</option>
+        </select>
       </div>
 
       <div class="control">
@@ -90,7 +107,7 @@
 
       <div class="control">
         <label for="shapeSides">Base Sides: <span id="shapeSidesVal"></span></label>
-        <input id="shapeSides" type="range" min="3" max="8" value="4" />
+        <input id="shapeSides" type="range" min="3" max="10" value="5" />
       </div>
 
       <div class="control">
@@ -101,6 +118,11 @@
       <div class="control">
         <label for="imageInfluence">Image Influence: <span id="imageInfluenceVal"></span></label>
         <input id="imageInfluence" type="range" min="0" max="1" step="0.01" value="0.65" />
+      </div>
+
+      <div class="control">
+        <label for="motifDensity">Motif Density: <span id="motifDensityVal"></span></label>
+        <input id="motifDensity" type="range" min="1" max="12" value="5" />
       </div>
 
       <div class="control">
@@ -117,8 +139,8 @@
       <button id="exportSvg">Export SVG for Cricut</button>
 
       <div id="notes">
-        Designed for single-layer SVG export with stroke-only paths and hatch lines.
-        Uploading an image changes the form language by remapping local shape complexity from tonal regions.
+        SVG export remains stroke-only for Cricut workflows. Try combining <b>Star + Concentric</b> or
+        <b>Auto Blend + Cross Hatch</b> with an uploaded image for richer structure.
       </div>
     </aside>
 

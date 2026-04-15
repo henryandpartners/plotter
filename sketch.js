@@ -1,11 +1,14 @@
 const config = {
   seed: 808,
   tileSize: 72,
-  shapeSides: 4,
+  shapeSides: 5,
   distortion: 0.42,
   imageInfluence: 0.65,
+  motifDensity: 5,
   hatchSpacing: 10,
   hatchAngle: 45,
+  shapeMode: 'auto',
+  patternMode: 'hatch',
 };
 
 let svgSegments = [];
@@ -21,8 +24,11 @@ const controls = {
   shapeSides: document.getElementById('shapeSides'),
   distortion: document.getElementById('distortion'),
   imageInfluence: document.getElementById('imageInfluence'),
+  motifDensity: document.getElementById('motifDensity'),
   hatchSpacing: document.getElementById('hatchSpacing'),
   hatchAngle: document.getElementById('hatchAngle'),
+  shapeMode: document.getElementById('shapeMode'),
+  patternMode: document.getElementById('patternMode'),
   reroll: document.getElementById('reroll'),
   exportSvg: document.getElementById('exportSvg'),
   seedVal: document.getElementById('seedVal'),
@@ -30,6 +36,7 @@ const controls = {
   shapeSidesVal: document.getElementById('shapeSidesVal'),
   distortionVal: document.getElementById('distortionVal'),
   imageInfluenceVal: document.getElementById('imageInfluenceVal'),
+  motifDensityVal: document.getElementById('motifDensityVal'),
   hatchSpacingVal: document.getElementById('hatchSpacingVal'),
   hatchAngleVal: document.getElementById('hatchAngleVal'),
 };
@@ -62,23 +69,35 @@ function draw() {
     for (let c = 0; c < cols; c += 1) {
       const x = MARGIN + c * config.tileSize;
       const y = MARGIN + r * config.tileSize;
-      const poly = makeImageReactivePolygon(x, y, config.tileSize, r, c);
+      const tone = sampleImageTone(x + config.tileSize * 0.5, y + config.tileSize * 0.5);
+      const poly = makeShape(x, y, config.tileSize, r, c, tone);
       drawPolygon(poly);
-      drawPolygonHatch(poly, config.hatchSpacing, radians(config.hatchAngle));
+      drawTilePattern(poly, tone);
     }
   }
 }
 
-function makeImageReactivePolygon(x, y, s, r, c) {
+function makeShape(x, y, s, r, c, tone) {
+  const mode = resolveShapeMode(tone);
+  if (mode === 'star') return makeStarPolygon(x, y, s, r, c, tone);
+  if (mode === 'petal') return makePetalPolygon(x, y, s, r, c, tone);
+  return makePolygon(x, y, s, r, c, tone);
+}
+
+function resolveShapeMode(tone) {
+  if (config.shapeMode !== 'auto') return config.shapeMode;
+  if (tone < 0.35) return 'star';
+  if (tone > 0.7) return 'petal';
+  return 'polygon';
+}
+
+function makePolygon(x, y, s, r, c, tone) {
   const cx = x + s * 0.5;
   const cy = y + s * 0.5;
-  const tone = sampleImageTone(cx, cy);
-
-  const targetSides = map(tone, 0, 1, 3, 8);
-  const sides = constrain(Math.round(lerp(config.shapeSides, targetSides, config.imageInfluence)), 3, 8);
+  const targetSides = map(tone, 0, 1, 3, 10);
+  const sides = constrain(Math.round(lerp(config.shapeSides, targetSides, config.imageInfluence)), 3, 10);
 
   const baseRadius = s * 0.45;
-  const toneScale = lerp(0.8, 1.25, tone);
   const jitterAmp = s * 0.28 * config.distortion;
   const rotation = noise(r * 0.2, c * 0.2, config.seed * 0.001) * TWO_PI;
 
@@ -86,7 +105,53 @@ function makeImageReactivePolygon(x, y, s, r, c) {
   for (let i = 0; i < sides; i += 1) {
     const angle = rotation + (TWO_PI * i) / sides;
     const toneWarp = Math.sin(angle * 2.0 + tone * TWO_PI) * config.imageInfluence;
-    const radius = baseRadius * toneScale + noise(c * 0.2 + i, r * 0.2 + i, config.seed * 0.01) * jitterAmp + toneWarp * jitterAmp;
+    const radius = baseRadius + noise(c * 0.2 + i, r * 0.2 + i, config.seed * 0.01) * jitterAmp + toneWarp * jitterAmp;
+
+    points.push({
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+    });
+  }
+
+  return points;
+}
+
+function makeStarPolygon(x, y, s, r, c, tone) {
+  const cx = x + s * 0.5;
+  const cy = y + s * 0.5;
+  const spikes = constrain(Math.round(lerp(config.shapeSides, map(tone, 0, 1, 4, 9), config.imageInfluence)), 4, 10);
+  const outer = s * 0.46;
+  const inner = outer * lerp(0.28, 0.62, tone);
+  const rotation = noise(r * 0.13, c * 0.13, config.seed * 0.002) * TWO_PI;
+
+  const points = [];
+  for (let i = 0; i < spikes * 2; i += 1) {
+    const angle = rotation + (TWO_PI * i) / (spikes * 2);
+    const radiusBase = i % 2 === 0 ? outer : inner;
+    const radius = radiusBase + random(-1, 1) * config.distortion * s * 0.08;
+
+    points.push({
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+    });
+  }
+
+  return points;
+}
+
+function makePetalPolygon(x, y, s, r, c, tone) {
+  const cx = x + s * 0.5;
+  const cy = y + s * 0.5;
+  const steps = 24;
+  const petals = constrain(Math.round(lerp(config.shapeSides, map(tone, 0, 1, 4, 12), config.imageInfluence)), 3, 12);
+  const rotation = noise(r * 0.17, c * 0.17, config.seed * 0.003) * TWO_PI;
+  const base = s * 0.34;
+
+  const points = [];
+  for (let i = 0; i < steps; i += 1) {
+    const angle = rotation + (TWO_PI * i) / steps;
+    const wave = 0.5 + 0.5 * Math.sin(angle * petals);
+    const radius = base + wave * s * 0.15 + random(-1, 1) * config.distortion * s * 0.05;
 
     points.push({
       x: cx + Math.cos(angle) * radius,
@@ -104,10 +169,48 @@ function sampleImageTone(x, y) {
   const v = constrain(y / height, 0, 1);
   const ix = Math.floor(u * (sourceImage.width - 1));
   const iy = Math.floor(v * (sourceImage.height - 1));
-
   const pixel = sourceImage.get(ix, iy);
-  const brightness = (pixel[0] + pixel[1] + pixel[2]) / (3 * 255);
-  return brightness;
+  return (pixel[0] + pixel[1] + pixel[2]) / (3 * 255);
+}
+
+function drawTilePattern(poly, tone) {
+  if (config.patternMode === 'cross') {
+    drawPolygonHatch(poly, config.hatchSpacing, radians(config.hatchAngle));
+    drawPolygonHatch(poly, config.hatchSpacing, radians(config.hatchAngle + 90));
+    return;
+  }
+
+  if (config.patternMode === 'concentric') {
+    drawConcentricPattern(poly, tone);
+    return;
+  }
+
+  drawPolygonHatch(poly, config.hatchSpacing, radians(config.hatchAngle));
+}
+
+function drawConcentricPattern(poly, tone) {
+  const center = polygonCenter(poly);
+  const steps = Math.max(2, Math.round(config.motifDensity + tone * config.motifDensity));
+
+  for (let i = 1; i <= steps; i += 1) {
+    const t = i / (steps + 1);
+    const ring = poly.map((p) => ({
+      x: lerp(p.x, center.x, t),
+      y: lerp(p.y, center.y, t),
+    }));
+
+    for (let k = 0; k < ring.length; k += 1) {
+      const a = ring[k];
+      const b = ring[(k + 1) % ring.length];
+      line(a.x, a.y, b.x, b.y);
+      addSegment(a.x, a.y, b.x, b.y);
+    }
+  }
+}
+
+function polygonCenter(poly) {
+  const sum = poly.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
+  return { x: sum.x / poly.length, y: sum.y / poly.length };
 }
 
 function drawPolygon(points) {
@@ -201,12 +304,8 @@ function addSegment(x1, y1, x2, y2) {
 }
 
 function exportSvg() {
-  const strokeWidth = 1;
   const paths = svgSegments
-    .map(
-      (s) =>
-        `<path d="M ${s.x1} ${s.y1} L ${s.x2} ${s.y2}" fill="none" stroke="#000" stroke-width="${strokeWidth}" />`
-    )
+    .map((s) => `<path d="M ${s.x1} ${s.y1} L ${s.x2} ${s.y2}" fill="none" stroke="#000" stroke-width="1" />`)
     .join('\n');
 
   const payload = `<?xml version="1.0" encoding="UTF-8"?>
@@ -251,12 +350,23 @@ function handleImageUpload(event) {
 function wireControls() {
   controls.sourceImage.addEventListener('change', handleImageUpload);
 
+  controls.shapeMode.addEventListener('change', (event) => {
+    config.shapeMode = event.target.value;
+    redraw();
+  });
+
+  controls.patternMode.addEventListener('change', (event) => {
+    config.patternMode = event.target.value;
+    redraw();
+  });
+
   Object.entries({
     seed: 'seed',
     tileSize: 'tileSize',
     shapeSides: 'shapeSides',
     distortion: 'distortion',
     imageInfluence: 'imageInfluence',
+    motifDensity: 'motifDensity',
     hatchSpacing: 'hatchSpacing',
     hatchAngle: 'hatchAngle',
   }).forEach(([id, key]) => {
@@ -285,6 +395,7 @@ function syncLabels() {
   controls.shapeSidesVal.textContent = config.shapeSides;
   controls.distortionVal.textContent = config.distortion.toFixed(2);
   controls.imageInfluenceVal.textContent = config.imageInfluence.toFixed(2);
+  controls.motifDensityVal.textContent = config.motifDensity;
   controls.hatchSpacingVal.textContent = config.hatchSpacing;
   controls.hatchAngleVal.textContent = config.hatchAngle;
 }
