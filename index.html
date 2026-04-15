@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generative Tessellation for Cricut</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, system-ui, -apple-system, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: #101018;
+        color: #f2f2f5;
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        min-height: 100vh;
+      }
+      #controls {
+        padding: 1rem;
+        border-right: 1px solid #2a2a3f;
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+      }
+      .control {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+      label {
+        font-size: 0.9rem;
+      }
+      input[type='range'],
+      input[type='file'],
+      select {
+        width: 100%;
+      }
+      button {
+        border: 1px solid #4a4a70;
+        background: #1f1f30;
+        color: #fff;
+        border-radius: 0.5rem;
+        padding: 0.6rem 0.8rem;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #292940;
+      }
+      #canvas-host {
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+      }
+      #notes {
+        margin-top: auto;
+        font-size: 0.8rem;
+        color: #b0b0c0;
+        line-height: 1.45;
+      }
+      .hint {
+        font-size: 0.75rem;
+        color: #a7a7bc;
+      }
+    </style>
+  </head>
+  <body>
+    <aside id="controls">
+      <h2>Pattern Controls</h2>
+
+      <div class="control">
+        <label for="sourceImage">Reference Image (optional)</label>
+        <input id="sourceImage" type="file" accept="image/*" />
+        <span class="hint">Image brightness can drive local shape complexity and patterns.</span>
+      </div>
+
+      <div class="control">
+        <label for="shapeMode">Shape Mode</label>
+        <select id="shapeMode">
+          <option value="auto">Auto Blend</option>
+          <option value="polygon">Polygon</option>
+          <option value="star">Star</option>
+          <option value="petal">Petal / Flower</option>
+        </select>
+      </div>
+
+      <div class="control">
+        <label for="patternMode">Pattern Mode</label>
+        <select id="patternMode">
+          <option value="hatch">Single Hatch</option>
+          <option value="cross">Cross Hatch</option>
+          <option value="concentric">Concentric Rings</option>
+        </select>
+      </div>
+
+      <div class="control">
+        <label for="seed">Seed: <span id="seedVal"></span></label>
+        <input id="seed" type="range" min="1" max="9999" value="808" />
+      </div>
+
+      <div class="control">
+        <label for="tileSize">Tile Size: <span id="tileSizeVal"></span></label>
+        <input id="tileSize" type="range" min="24" max="140" value="72" />
+      </div>
+
+      <div class="control">
+        <label for="shapeSides">Base Sides: <span id="shapeSidesVal"></span></label>
+        <input id="shapeSides" type="range" min="3" max="10" value="5" />
+      </div>
+
+      <div class="control">
+        <label for="distortion">Distortion: <span id="distortionVal"></span></label>
+        <input id="distortion" type="range" min="0" max="1" step="0.01" value="0.42" />
+      </div>
+
+      <div class="control">
+        <label for="imageInfluence">Image Influence: <span id="imageInfluenceVal"></span></label>
+        <input id="imageInfluence" type="range" min="0" max="1" step="0.01" value="0.65" />
+      </div>
+
+      <div class="control">
+        <label for="motifDensity">Motif Density: <span id="motifDensityVal"></span></label>
+        <input id="motifDensity" type="range" min="1" max="12" value="5" />
+      </div>
+
+      <div class="control">
+        <label for="hatchSpacing">Hatch Spacing: <span id="hatchSpacingVal"></span></label>
+        <input id="hatchSpacing" type="range" min="4" max="28" value="10" />
+      </div>
+
+      <div class="control">
+        <label for="hatchAngle">Hatch Angle: <span id="hatchAngleVal"></span>°</label>
+        <input id="hatchAngle" type="range" min="0" max="180" value="45" />
+      </div>
+
+      <button id="reroll">Reroll Random Seed</button>
+      <button id="exportSvg">Export SVG for Cricut</button>
+
+      <div id="notes">
+        SVG export remains stroke-only for Cricut workflows. Try combining <b>Star + Concentric</b> or
+        <b>Auto Blend + Cross Hatch</b> with an uploaded image for richer structure.
+      </div>
+    </aside>
+
+    <main id="canvas-host"></main>
+
+    <script src="sketch.js"></script>
+  </body>
+</html>
